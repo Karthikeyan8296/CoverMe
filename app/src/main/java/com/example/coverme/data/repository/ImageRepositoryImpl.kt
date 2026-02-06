@@ -40,13 +40,27 @@ class ImageRepositoryImpl @Inject constructor(private val api: UnSplashAPI) : Im
     override fun getPhotos(): Flow<PagingData<PhotoDTOItem>> {
         return Pager(
             config = PagingConfig(
-                pageSize = 10,
-                prefetchDistance = 5,
-                maxSize = 400,
-                enablePlaceholders = false
+                pageSize = 10, prefetchDistance = 5, maxSize = 400, enablePlaceholders = false
             ), pagingSourceFactory = {
                 UnSplashPagingSource(api)
+            }).flow
+    }
+
+    override suspend fun getPhotoById(id: String?): Result<PhotoDTOItem> {
+        return try {
+            val response = api.getPhotoById(id)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.Success(body)
+                } else {
+                    Result.Error("Response body is null")
+                }
+            } else {
+                Result.Error("Request failed with code ${response.code()}")
             }
-        ).flow
+        } catch (e: Exception) {
+            Result.Error("Error occur on random api ${e.message}")
+        }
     }
 }

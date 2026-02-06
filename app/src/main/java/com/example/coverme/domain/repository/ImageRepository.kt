@@ -9,6 +9,8 @@ interface ImageRepository {
     suspend fun getRandomImage(): Result<RandomPhotoDTO>
 
     fun getPhotos(): Flow<PagingData<PhotoDTOItem>>
+
+    suspend fun getPhotoById(id: String?): Result<PhotoDTOItem>
 }
 
 sealed class Result<T> {

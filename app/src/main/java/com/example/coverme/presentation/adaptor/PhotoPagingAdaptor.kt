@@ -1,5 +1,6 @@
 package com.example.coverme.presentation.adaptor
 
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,15 +11,21 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.coverme.R
 import com.example.coverme.data.remote.DTO.PhotoDTO.PhotoDTOItem
+import com.example.coverme.presentation.screens.Home.PhotoDetails
 
 
-class PhotoPagingAdaptor :
-    PagingDataAdapter<PhotoDTOItem, PhotoPagingAdaptor.PhotoViewHolder>(COMPARATOR) {
+class PhotoPagingAdaptor(
+    private val onItemClick: (String) -> Unit
+) : PagingDataAdapter<PhotoDTOItem, PhotoPagingAdaptor.PhotoViewHolder>(COMPARATOR) {
 
-    class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val image = itemView.findViewById<ImageView>(R.id.imageView)
         fun bind(photo: PhotoDTOItem) {
             Glide.with(image).load(photo.urls.regular).into(image)
+
+            itemView.setOnClickListener {
+               onItemClick(photo.id)
+            }
         }
     }
 

@@ -8,6 +8,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.coverme.R
 import com.example.coverme.presentation.adaptor.PhotoPagingAdaptor
 import dagger.hilt.android.AndroidEntryPoint
@@ -17,18 +18,29 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
+    fun openPhotoDetails(id: String){
+        val dialog = PhotoDetails().apply {
+            arguments = Bundle().apply {
+                putString("photo_id", id)
+            }
+        }
+        dialog.show(parentFragmentManager, "PhotoDetails")
+    }
+
     private val viewModel: HomeViewModel by viewModels()
-    private val adaptor = PhotoPagingAdaptor()
+    private val adaptor = PhotoPagingAdaptor(
+        onItemClick = {
+            openPhotoDetails(it)
+        }
+    )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val recycle = view.findViewById<RecyclerView>(R.id.recycleView)
-        view.findViewById<TextView>(R.id.logo)
-
 
         val layoutManager =
-            GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
+            StaggeredGridLayoutManager(2, GridLayoutManager.VERTICAL)
 
         recycle.layoutManager = layoutManager
         recycle.adapter = adaptor
@@ -37,5 +49,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 adaptor.submitData(it)
             }
         }
+
+
     }
 }

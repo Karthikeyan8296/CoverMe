@@ -41,6 +41,8 @@ class ImageRepositoryImpl @Inject constructor(private val api: UnSplashAPI) : Im
         return Pager(
             config = PagingConfig(
                 pageSize = 10,
+                prefetchDistance = 5,
+                maxSize = 400,
                 enablePlaceholders = false
             ), pagingSourceFactory = {
                 UnSplashPagingSource(api)

@@ -18,7 +18,7 @@ class PhotoPagingAdaptor :
     class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val image = itemView.findViewById<ImageView>(R.id.imageView)
         fun bind(photo: PhotoDTOItem) {
-            Glide.with(image).load(photo.urls.full).into(image)
+            Glide.with(image).load(photo.urls.regular).into(image)
         }
     }
 

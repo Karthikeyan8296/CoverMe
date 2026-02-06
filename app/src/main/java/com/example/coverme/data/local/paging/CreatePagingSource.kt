@@ -17,13 +17,17 @@ class UnSplashPagingSource(
                 page = page, per_page = params.loadSize
             )
 
+            Log.d("Paging3", "Loading page $page with size ${params.loadSize}")
+
             LoadResult.Page(
                 data = photos,
                 prevKey = if (page == 1) null else page - 1,
                 nextKey = if (photos.isEmpty()) null else page + 1
             )
+
+
         } catch (e: Exception) {
-            Log.d("MOMMME", "Error occur on random api ${e.message}")
+            Log.d("HELLOOOO", "error occur on random api ${e.message}")
             LoadResult.Error(e)
         }
     }

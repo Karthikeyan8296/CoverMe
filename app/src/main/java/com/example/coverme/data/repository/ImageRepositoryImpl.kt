@@ -1,15 +1,21 @@
 package com.example.coverme.data.repository
 
 import android.util.Log
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import com.example.coverme.data.local.paging.UnSplashPagingSource
+import com.example.coverme.data.remote.DTO.PhotoDTO.PhotoDTOItem
 import com.example.coverme.data.remote.DTO.RandomPhotoDTO
 import com.example.coverme.data.remote.api.UnSplashAPI
 import com.example.coverme.domain.repository.ImageRepository
 import com.example.coverme.domain.repository.Result
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class ImageRepositoryImpl @Inject constructor (private val api: UnSplashAPI): ImageRepository {
+class ImageRepositoryImpl @Inject constructor(private val api: UnSplashAPI) : ImageRepository {
     override suspend fun getRandomImage(): Result<RandomPhotoDTO> {
-        return try{
+        return try {
             val response = api.getRandomPhoto()
 
             if (response.isSuccessful) {
@@ -25,9 +31,20 @@ class ImageRepositoryImpl @Inject constructor (private val api: UnSplashAPI): Im
                 Log.d("HOHO", "Request failed with code ${response.code()}")
                 Result.Error("Request failed with code ${response.code()}")
             }
-        }catch (e: Exception){
+        } catch (e: Exception) {
             Log.d("HOHO", "Error occur on random api ${e.message}")
             Result.Error("Error occur on random api ${e.message}")
         }
+    }
+
+    override fun getPhotos(): Flow<PagingData<PhotoDTOItem>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 10,
+                enablePlaceholders = false
+            ), pagingSourceFactory = {
+                UnSplashPagingSource(api)
+            }
+        ).flow
     }
 }

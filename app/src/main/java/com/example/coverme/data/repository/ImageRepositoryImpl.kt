@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
-import com.example.coverme.data.local.paging.UnSplashPagingSource
+import com.example.coverme.data.remote.paging.UnSplashPagingSource
 import com.example.coverme.data.remote.DTO.PhotoDTO.PhotoDTOItem
 import com.example.coverme.data.remote.DTO.RandomPhotoDTO
 import com.example.coverme.data.remote.api.UnSplashAPI

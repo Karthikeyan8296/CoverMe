@@ -29,5 +29,19 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:listitem="@layout/item_photo"/>
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="32dp"
+        android:src="@drawable/heart_filled"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginEnd="32dp">
+
+    </com.google.android.material.floatingactionbutton.FloatingActionButton>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

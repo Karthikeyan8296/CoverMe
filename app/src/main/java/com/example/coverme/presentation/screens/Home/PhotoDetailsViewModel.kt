@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.coverme.domain.repository.ImageRepository
 import com.example.coverme.domain.repository.Result
+import com.example.coverme.domain.repository.StoreFavRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,12 +12,15 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class PhotoDetailsState(
-    val image: String = "", val loading: Boolean = false, val error: String = ""
+    val image: String = "",
+    val loading: Boolean = false,
+    val error: String = "",
+    val isFav: Boolean = false
 )
 
 @HiltViewModel
 class PhotoDetailsViewModel @Inject constructor(
-    private val repository: ImageRepository
+    private val repository: ImageRepository, private val storeFavRepository: StoreFavRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PhotoDetailsState())
@@ -40,6 +44,25 @@ class PhotoDetailsViewModel @Inject constructor(
                     )
                 }
             }
+        }
+    }
+
+    fun addToFav(id: String) {
+        viewModelScope.launch {
+            storeFavRepository.addToFav(id)
+        }
+    }
+
+    fun removeFromFav(id: String) {
+        viewModelScope.launch {
+            storeFavRepository.removeFromFav(id)
+        }
+    }
+
+    fun checkIsFav(id: String) {
+        viewModelScope.launch {
+            val fav = storeFavRepository.isFav(id)
+            _state.value = _state.value.copy(isFav = fav)
         }
     }
 }

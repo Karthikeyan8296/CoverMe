@@ -40,11 +40,30 @@ class PhotoDetails : DialogFragment(R.layout.fragment_photo_details) {
         val error = view.findViewById<TextView>(R.id.idTxt)
         val heart = view.findViewById<ImageView>(R.id.heartIcon)
 
+        photoId?.let {
+            viewModel.checkIsFav(it)
+        }
+
+        lifecycleScope.launch {
+            viewModel.state.collect { state ->
+                isLiked = state.isFav
+                heart.setImageResource(
+                    if (isLiked) R.drawable.heart_filled else R.drawable.heart
+                )
+            }
+        }
+
         heart.setOnClickListener {
             isLiked = !isLiked
             heart.setImageResource(
                 if(isLiked) R.drawable.heart_filled else R.drawable.heart
             )
+
+            if (isLiked) {
+                photoId?.let { viewModel.addToFav(it) }
+            } else {
+                photoId?.let { viewModel.removeFromFav(it) }
+            }
 
             heart.animate().scaleX(1.2f).scaleY(1.2f).setDuration(100)
                 .withEndAction {

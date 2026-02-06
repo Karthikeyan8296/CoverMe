@@ -1,12 +1,19 @@
 package com.example.coverme.data.di
 
+import android.content.Context
+import androidx.room.Room
+import com.example.coverme.data.local.DAO.PhotosDAO
+import com.example.coverme.data.local.database.AppDatabase
 import com.example.coverme.data.remote.api.UnSplashAPI
 import com.example.coverme.data.repository.ImageRepositoryImpl
+import com.example.coverme.data.repository.StoreFavRepositoryImpl
 import com.example.coverme.domain.repository.ImageRepository
+import com.example.coverme.domain.repository.StoreFavRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -18,6 +25,20 @@ const val BASE_URL = "https://api.unsplash.com/"
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun providerDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context.applicationContext, AppDatabase::class.java, "app_database"
+        ).fallbackToDestructiveMigration().build()
+    }
+
+    @Provides
+    @Singleton
+    fun providerPhotosDAO(database: AppDatabase): PhotosDAO {
+        return database.photosDao()
+    }
 
     @Provides
     @Singleton
@@ -47,4 +68,9 @@ abstract class RepositoryModule {
     abstract fun bindImageRepository(
         imageRepositoryImpl: ImageRepositoryImpl
     ): ImageRepository
+
+    @Binds
+    abstract fun bindFavRepository(
+        storeFavRepositoryImpl: StoreFavRepositoryImpl
+    ): StoreFavRepository
 }

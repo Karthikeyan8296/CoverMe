@@ -1,4 +1,4 @@
-package com.example.coverme.data.local.paging
+package com.example.coverme.data.remote.paging
 
 import android.util.Log
 import androidx.paging.PagingSource

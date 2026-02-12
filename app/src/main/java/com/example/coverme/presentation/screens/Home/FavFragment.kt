@@ -1,7 +1,9 @@
 package com.example.coverme.presentation.screens.Home
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -14,7 +16,17 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class FavFragment : Fragment(R.layout.fragment_fav) {
+class FavFragment : Fragment() {
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        //root - viewGroup, that is FrameLayout, LinearLayout
+        return inflater.inflate(R.layout.fragment_fav, container, false)
+    }
+
     fun openPhotoDetails(id: String) {
         val dialog = PhotoDetails().apply {
             arguments = Bundle().apply {

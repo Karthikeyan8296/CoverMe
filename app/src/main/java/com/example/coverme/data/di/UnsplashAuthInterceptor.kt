@@ -4,6 +4,7 @@ import okhttp3.Interceptor
 import okhttp3.Response
 
 class UnsplashAuthInterceptor: Interceptor {
+    //interceptor used to handle the api related attributes, like header, bearer key like that.. to pass on all api
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request().newBuilder()
             .addHeader(

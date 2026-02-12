@@ -1,6 +1,6 @@
 package com.example.coverme.presentation.adaptor
 
-import android.os.Bundle
+import android.media.browse.MediaBrowser
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.coverme.R
 import com.example.coverme.data.remote.DTO.PhotoDTO.PhotoDTOItem
-import com.example.coverme.presentation.screens.Home.PhotoDetails
 
 
 class PhotoPagingAdaptor(
@@ -21,10 +20,10 @@ class PhotoPagingAdaptor(
     inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val image = itemView.findViewById<ImageView>(R.id.imageView)
         fun bind(photo: PhotoDTOItem) {
-            Glide.with(image).load(photo.urls.regular).into(image)
-
+            //load returns the requestBuilder
+            Glide.with(itemView.context).load(photo.urls.regular).into(image)
             itemView.setOnClickListener {
-               onItemClick(photo.id)
+                onItemClick(photo.id)
             }
         }
     }
@@ -32,7 +31,20 @@ class PhotoPagingAdaptor(
     override fun onCreateViewHolder(
         parent: ViewGroup, viewType: Int
     ): PhotoViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_photo, parent, false)
+
+        //View - TextView, Button etc..
+        //ViewGroup - LinearLayout, FrameLayout etc..
+
+        //inflate - It converts the XML resource to Java View objects
+        //attachToRoot = true, When we need to manually adding the view by ourself.
+        //attachToRoot = false, Some system component will attach it for you, in case here is RecycleView
+
+        //If we are not inside the fragment manager or RecycleView, we use True, as we manually need to put!
+        //Root = LayoutGroup, that is LinearLayout, FrameLayout
+
+        //inflate main role -> create View Objects (false), or insert them into the parent! (true)
+        val view = LayoutInflater.from(parent.context).
+        inflate(R.layout.item_photo, parent, false)
         return PhotoViewHolder(view)
     }
 
@@ -45,6 +57,9 @@ class PhotoPagingAdaptor(
     }
 
     //comparing the old photos and avoid reputation
+
+    //DiffUtil is a utility class that calculates the difference between two lists
+    // and outputs a list of update operations that converts the first list into the second one.
     companion object {
         private val COMPARATOR = object : DiffUtil.ItemCallback<PhotoDTOItem>() {
             override fun areItemsTheSame(oldItem: PhotoDTOItem, newItem: PhotoDTOItem): Boolean =

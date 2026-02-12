@@ -13,6 +13,8 @@ import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ActivityComponent
+import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
@@ -22,7 +24,10 @@ import javax.inject.Singleton
 
 const val BASE_URL = "https://api.unsplash.com/"
 
+//module is an container class, where we need to define the @Provide, @Bind dependency
+//Container for dependency definitions
 @Module
+//it defines the scope, its like lifecycle container
 @InstallIn(SingletonComponent::class)
 object AppModule {
 

@@ -13,5 +13,4 @@ class UnsplashAuthInterceptor: Interceptor {
 
         return chain.proceed(request)
     }
-
 }

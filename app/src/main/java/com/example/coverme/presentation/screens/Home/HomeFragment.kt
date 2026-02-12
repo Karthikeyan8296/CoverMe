@@ -14,12 +14,14 @@ import com.example.coverme.presentation.adaptor.PhotoPagingAdaptor
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
 @AndroidEntryPoint
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
     fun openPhotoDetails(id: String){
+
         val dialog = PhotoDetails().apply {
             arguments = Bundle().apply {
                 putString("photo_id", id)

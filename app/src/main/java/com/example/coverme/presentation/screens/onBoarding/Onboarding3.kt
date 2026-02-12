@@ -22,11 +22,13 @@ class Onboarding3 : Fragment(R.layout.fragment_onboarding3) {
 
                 onBoardingDataStore.setOnBoarding()
 
-                //Im deleting the all "null" History stack
-                parentFragmentManager.popBackStack(
-                    null,
-                    FragmentManager.POP_BACK_STACK_INCLUSIVE
-                )
+                //(null, inclusive) -> There is no name to search, clear all the back stack! - eg, clear all
+                //("onboarding", 0) -> pop until the name! becomes top - eg, onboarding1
+                //("onboarding", inclusive) -> clear all the back stack with this name too!
+                //popBackStack() -> it pops only the top screen! - eg, onboarding2
+                //(null, 0) -> it pops the top screen only! same as popBackStack()
+                parentFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+
 
                 parentFragmentManager.beginTransaction().replace(R.id.main, HomeFragment())
                     .commit()

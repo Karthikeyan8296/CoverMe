@@ -1,6 +1,5 @@
 package com.example.coverme.presentation.adaptor
 
-import android.media.browse.MediaBrowser
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,16 +9,16 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.coverme.R
-import com.example.coverme.data.remote.DTO.PhotoDTO.PhotoDTOItem
+import com.example.coverme.domain.models.PhotoModel
 
 
 class PhotoPagingAdaptor(
     private val onItemClick: (String) -> Unit
-) : PagingDataAdapter<PhotoDTOItem, PhotoPagingAdaptor.PhotoViewHolder>(COMPARATOR) {
+) : PagingDataAdapter<PhotoModel, PhotoPagingAdaptor.PhotoViewHolder>(COMPARATOR) {
 
     inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val image = itemView.findViewById<ImageView>(R.id.imageView)
-        fun bind(photo: PhotoDTOItem) {
+        fun bind(photo: PhotoModel) {
             //load returns the requestBuilder
             Glide.with(itemView.context).load(photo.urls.regular).into(image)
             itemView.setOnClickListener {
@@ -43,8 +42,7 @@ class PhotoPagingAdaptor(
         //Root = LayoutGroup, that is LinearLayout, FrameLayout
 
         //inflate main role -> create View Objects (false), or insert them into the parent! (true)
-        val view = LayoutInflater.from(parent.context).
-        inflate(R.layout.item_photo, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_photo, parent, false)
         return PhotoViewHolder(view)
     }
 
@@ -61,11 +59,11 @@ class PhotoPagingAdaptor(
     //DiffUtil is a utility class that calculates the difference between two lists
     // and outputs a list of update operations that converts the first list into the second one.
     companion object {
-        private val COMPARATOR = object : DiffUtil.ItemCallback<PhotoDTOItem>() {
-            override fun areItemsTheSame(oldItem: PhotoDTOItem, newItem: PhotoDTOItem): Boolean =
+        private val COMPARATOR = object : DiffUtil.ItemCallback<PhotoModel>() {
+            override fun areItemsTheSame(oldItem: PhotoModel, newItem: PhotoModel): Boolean =
                 oldItem.id == newItem.id
 
-            override fun areContentsTheSame(oldItem: PhotoDTOItem, newItem: PhotoDTOItem): Boolean =
+            override fun areContentsTheSame(oldItem: PhotoModel, newItem: PhotoModel): Boolean =
                 oldItem == newItem
         }
     }

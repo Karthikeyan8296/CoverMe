@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.coverme.data.remote.DTO.PhotoDTO.PhotoDTOItem
+import com.example.coverme.domain.models.PhotoModel
 import com.example.coverme.domain.repository.ImageRepository
 import com.example.coverme.domain.repository.Result
 import com.example.coverme.domain.repository.StoreFavRepository
@@ -18,14 +19,14 @@ class FavViewModel @Inject constructor(
     private val favRepository: StoreFavRepository, private val imageRepository: ImageRepository
 ) : ViewModel() {
 
-    private val _photos = MutableStateFlow<List<PhotoDTOItem>>(emptyList())
+    private val _photos = MutableStateFlow<List<PhotoModel>>(emptyList())
     val photo = _photos.asStateFlow()
 
     fun loadFavPhotos() {
         viewModelScope.launch {
             val ids = favRepository.getAllFav()
 
-            val result: List<PhotoDTOItem> = ids.mapNotNull { id ->
+            val result: List<PhotoModel> = ids.mapNotNull { id ->
                 when (val res = imageRepository.getPhotoById(id)) {
                     is Result.Success -> res.data
                     is Result.Error -> {

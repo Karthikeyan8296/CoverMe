@@ -10,7 +10,7 @@ import retrofit2.http.Query
 interface UnSplashAPI {
 
     @GET("photos/random")
-    suspend fun getRandomPhoto(): Response<RandomPhotoDTO>
+    suspend fun getRandomPhoto(): Response<PhotoDTOItem>
 
     @GET("/photos")
     suspend fun getPhotos(

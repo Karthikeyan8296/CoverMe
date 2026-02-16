@@ -1,7 +1,6 @@
 package com.example.coverme.data.remote.api
 
 import com.example.coverme.data.remote.DTO.PhotoDTO.PhotoDTOItem
-import com.example.coverme.data.remote.DTO.RandomPhotoDTO
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path

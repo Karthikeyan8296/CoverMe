@@ -15,7 +15,7 @@ interface PhotosDAO {
     @Query("DELETE FROM FavPhotosTable WHERE photoId = :id")
     suspend fun deletePhoto(id: String)
 
-    @Query("SELECT photoId FROM FavPhotosTable")
+    @Query("SELECT photoId FROM FavPhotosTable ORDER BY addedAt DESC")
     suspend fun getAllPhotos(): List<String>
 
     @Query("SELECT EXISTS(SELECT 1 FROM FavPhotosTable WHERE photoId = :id)")

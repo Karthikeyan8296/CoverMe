@@ -6,5 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "FavPhotosTable")
 data class FavEntity(
     @PrimaryKey
-    val photoId : String
+    val photoId : String,
+
+    val addedAt: Long = System.currentTimeMillis()
 )

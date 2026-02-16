@@ -52,13 +52,13 @@
 
             <TextView
                 android:id="@+id/nameTxt"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:text="Name"/>
+                android:text="Name"
+                android:textColor="@color/white" />
             <TextView
                 android:id="@+id/userNameTxt"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
                 android:text="Username"/>

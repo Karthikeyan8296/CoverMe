@@ -2,7 +2,6 @@ package com.example.coverme.presentation.screens.Home
 
 import android.os.Bundle
 import android.view.View
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -14,13 +13,12 @@ import com.example.coverme.presentation.adaptor.PhotoPagingAdaptor
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 
 @AndroidEntryPoint
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
-    fun openPhotoDetails(id: String){
+    fun openPhotoDetails(id: String) {
 
         val dialog = PhotoDetails().apply {
             arguments = Bundle().apply {
@@ -34,16 +32,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val adaptor = PhotoPagingAdaptor(
         onItemClick = {
             openPhotoDetails(it)
-        }
-    )
+        })
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val recycle = view.findViewById<RecyclerView>(R.id.recycleView)
 
-        val layoutManager =
-            StaggeredGridLayoutManager(2, GridLayoutManager.VERTICAL)
+        val layoutManager = StaggeredGridLayoutManager(2, GridLayoutManager.VERTICAL)
 
         recycle.layoutManager = layoutManager
         recycle.adapter = adaptor
@@ -56,10 +52,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val fab = view.findViewById<FloatingActionButton>(R.id.fab)
 
         fab.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.main, FavFragment())
-                .addToBackStack(null)
-                .commit()
+            parentFragmentManager.beginTransaction().replace(R.id.main, FavFragment())
+                .addToBackStack(null).commit()
         }
     }
 }

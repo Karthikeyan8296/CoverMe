@@ -9,15 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 
-data class HomeState(
-    val isLoading: Boolean = false, val image: String? = null, val error: String? = null,
-)
-
 @HiltViewModel
 class HomeViewModel @Inject constructor(private val imageRepository: ImageRepository) :
     ViewModel() {
-    private val _state = MutableStateFlow(HomeState())
-    val state = _state.asStateFlow()
 
     val photos = imageRepository.getPhotos().cachedIn(viewModelScope)
 }

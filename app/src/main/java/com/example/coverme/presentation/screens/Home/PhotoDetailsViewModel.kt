@@ -1,5 +1,6 @@
 package com.example.coverme.presentation.screens.Home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.coverme.domain.repository.ImageRepository
@@ -15,7 +16,10 @@ data class PhotoDetailsState(
     val image: String = "",
     val loading: Boolean = false,
     val error: String = "",
-    val isFav: Boolean = false
+    val isFav: Boolean = false,
+    val name: String = "",
+    val userName: String = "",
+    val profileImage: String? = ""
 )
 
 @HiltViewModel
@@ -35,7 +39,11 @@ class PhotoDetailsViewModel @Inject constructor(
                     _state.value = state.value.copy(
                         loading = false,
                         image = result.data.urls.regular,
+                        name = result.data.user.name,
+                        userName = result.data.user.username,
+                        profileImage = result.data.user.profile_image?.medium
                     )
+                    Log.d("PROFILE_IMAGE", result.data.user.profile_image?.small.toString())
                 }
 
                 is Result.Error -> {

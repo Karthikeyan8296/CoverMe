@@ -24,6 +24,7 @@ import com.bumptech.glide.load.resource.bitmap.GranularRoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import org.w3c.dom.Text
 
 
 @AndroidEntryPoint
@@ -37,8 +38,11 @@ class PhotoDetails : DialogFragment(R.layout.fragment_photo_details) {
         val photoId = arguments?.getString("photo_id")
         viewModel.getImages(photoId)
         val mainImage = view.findViewById<ImageView>(R.id.detailImg)
-        val error = view.findViewById<TextView>(R.id.idTxt)
+        val error = view.findViewById<TextView>(R.id.nameTxt)
         val heart = view.findViewById<ImageView>(R.id.heartIcon)
+        val name = view.findViewById<TextView>(R.id.nameTxt)
+        val userName = view.findViewById<TextView>(R.id.userNameTxt)
+        val userImage = view.findViewById<ImageView>(R.id.userImage)
 
         photoId?.let {
             viewModel.checkIsFav(it)
@@ -77,6 +81,10 @@ class PhotoDetails : DialogFragment(R.layout.fragment_photo_details) {
                     .transform(GranularRoundedCorners(75f, 75f, 0f, 0f))
                     .into(mainImage)
                 error.text = it.error
+                name.text = it.name
+                userName.text = it.userName
+                Glide.with(requireContext()).load(it.profileImage)
+                    .apply(RequestOptions.circleCropTransform()).into(userImage)
             }
         }
     }

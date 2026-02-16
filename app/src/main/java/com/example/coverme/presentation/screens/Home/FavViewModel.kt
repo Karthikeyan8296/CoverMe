@@ -9,8 +9,12 @@ import com.example.coverme.domain.repository.ImageRepository
 import com.example.coverme.domain.repository.Result
 import com.example.coverme.domain.repository.StoreFavRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,19 +28,19 @@ class FavViewModel @Inject constructor(
 
     fun loadFavPhotos() {
         viewModelScope.launch {
-            val ids = favRepository.getAllFav()
-
-            val result: List<PhotoModel> = ids.mapNotNull { id ->
-                when (val res = imageRepository.getPhotoById(id)) {
-                    is Result.Success -> res.data
-                    is Result.Error -> {
-                        Log.d("FavViewModel", res.message)
-                        null
+            favRepository.getAllFav().collectLatest { favId ->
+                val result: List<PhotoModel> = favId.mapNotNull {
+                    when (val res = imageRepository.getPhotoById(it)) {
+                        is Result.Success -> res.data
+                        is Result.Error -> {
+                            Log.d("FavViewModel", res.message)
+                            null
+                        }
                     }
                 }
+                _photos.value = result
             }
 
-            _photos.value = result
         }
     }
 }

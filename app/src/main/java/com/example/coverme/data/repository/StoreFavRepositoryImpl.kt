@@ -3,6 +3,7 @@ package com.example.coverme.data.repository
 import com.example.coverme.data.local.DAO.PhotosDAO
 import com.example.coverme.data.local.entity.FavEntity
 import com.example.coverme.domain.repository.StoreFavRepository
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class StoreFavRepositoryImpl @Inject constructor (
@@ -16,7 +17,7 @@ class StoreFavRepositoryImpl @Inject constructor (
         dao.deletePhoto(id)
     }
 
-    override suspend fun getAllFav(): List<String> {
+    override suspend fun getAllFav(): Flow<List<String>> {
         return dao.getAllPhotos()
     }
 

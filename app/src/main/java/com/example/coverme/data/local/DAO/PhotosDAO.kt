@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import com.example.coverme.data.local.entity.FavEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PhotosDAO {
@@ -15,8 +16,8 @@ interface PhotosDAO {
     @Query("DELETE FROM FavPhotosTable WHERE photoId = :id")
     suspend fun deletePhoto(id: String)
 
-    @Query("SELECT photoId FROM FavPhotosTable ORDER BY addedAt DESC")
-    suspend fun getAllPhotos(): List<String>
+    @Query("SELECT photoId FROM FavPhotosTable ORDER BY favId DESC")
+    fun getAllPhotos(): Flow<List<String>>
 
     @Query("SELECT EXISTS(SELECT 1 FROM FavPhotosTable WHERE photoId = :id)")
     suspend fun isFav(id: String): Boolean

@@ -7,7 +7,7 @@ import com.example.coverme.data.local.entity.FavEntity
 
 
 @Database(
-    entities = [FavEntity::class], version = 5, exportSchema = false
+    entities = [FavEntity::class], version = 7, exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun photosDao(): PhotosDAO

@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -19,7 +21,9 @@ import kotlinx.coroutines.launch
 class FavFragment : Fragment() {
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View? {
         //root - viewGroup, that is FrameLayout, LinearLayout
         return inflater.inflate(R.layout.fragment_fav, container, false)
@@ -44,6 +48,14 @@ class FavFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val recycle = view.findViewById<RecyclerView>(R.id.favRecycle)
+        val emptyState = view.findViewById<View>(R.id.emptyState)
+        val btn = view.findViewById<Button>(R.id.backBtn)
+
+        btn.setOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
+
+        view.findViewById<TextView>(R.id.emptyTxt).text = "You can add an item to your\nfavourite by tapping on heart icon."
 
         val layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
         layoutManager.gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE
@@ -53,8 +65,13 @@ class FavFragment : Fragment() {
 
         viewModel.loadFavPhotos()
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.photo.collect { list ->
+                val isEmpty = list.isEmpty()
+                emptyState.visibility = if (isEmpty) View.VISIBLE else View.GONE
+                recycle.visibility = if (isEmpty) View.GONE else View.VISIBLE
+
+
                 adaptor.submitData(PagingData.from(list))
             }
         }

@@ -5,7 +5,7 @@ pluginManagement {
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
                     ?: providers.gradleProperty("gpr.user").orNull
-                password = System.getenv("GITHUB_TOKEN")
+                password = System.getenv("GH_PACKAGES_TOKEN")
                     ?: providers.gradleProperty("gpr.token").orNull
             }
         }
@@ -30,7 +30,7 @@ dependencyResolutionManagement {
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
                     ?: providers.gradleProperty("gpr.user").orNull
-                password = System.getenv("GITHUB_TOKEN")
+                password = System.getenv("GH_PACKAGES_TOKEN")
                     ?: providers.gradleProperty("gpr.token").orNull
             }
         }

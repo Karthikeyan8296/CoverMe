@@ -1,5 +1,14 @@
 pluginManagement {
     repositories {
+        maven {
+            url = uri("https://maven.pkg.github.com/Karthikeyan8296/dependencyDoctor")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                    ?: providers.gradleProperty("gpr.user").orNull
+                password = System.getenv("GITHUB_TOKEN")
+                    ?: providers.gradleProperty("gpr.token").orNull
+            }
+        }
         google {
             content {
                 includeGroupByRegex("com\\.android.*")

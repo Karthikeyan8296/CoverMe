@@ -15,7 +15,8 @@ class Onboarding1 : Fragment(R.layout.fragment_onboarding1) {
         view.findViewById<Button>(R.id.onboarding1Btn).setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.main, Onboarding2())
-                .addToBackStack("one")
+                //it remember the transaction
+                .addToBackStack(null)
                 .commit()
         }
     }

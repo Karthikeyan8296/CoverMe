@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.coverme.data.remote.DTO.PhotoDTO.PhotoDTOItem
+import com.example.coverme.data.repository.ImageRepositoryImpl
 import com.example.coverme.domain.models.PhotoModel
 import com.example.coverme.domain.repository.ImageRepository
 import com.example.coverme.domain.repository.Result

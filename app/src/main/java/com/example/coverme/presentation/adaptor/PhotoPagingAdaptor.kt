@@ -16,6 +16,8 @@ class PhotoPagingAdaptor(
     private val onItemClick: (String) -> Unit
 ) : PagingDataAdapter<PhotoModel, PhotoPagingAdaptor.PhotoViewHolder>(COMPARATOR) {
 
+    //ViewHolder === One Row - this represents one item, in the row
+    //purpose - Avoid repeated findViewById<>
     inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val image = itemView.findViewById<ImageView>(R.id.imageView)
         fun bind(photo: PhotoModel) {
@@ -27,6 +29,8 @@ class PhotoPagingAdaptor(
         }
     }
 
+    //IMPLEMENTED CLASS//
+    //When u need a new row, use the MyViewHolder row
     override fun onCreateViewHolder(
         parent: ViewGroup, viewType: Int
     ): PhotoViewHolder {
@@ -34,7 +38,7 @@ class PhotoPagingAdaptor(
         //View - TextView, Button etc..
         //ViewGroup - LinearLayout, FrameLayout etc..
 
-        //inflate - It converts the XML resource to Java View objects
+        //LayoutInflater - It converts the XML resource into actual View objects, this process is called inflation
         //attachToRoot = true, When we need to manually adding the view by ourself.
         //attachToRoot = false, Some system component will attach it for you, in case here is RecycleView
 
@@ -46,6 +50,8 @@ class PhotoPagingAdaptor(
         return PhotoViewHolder(view)
     }
 
+    //For this row, put the correct data
+    //Binds data to the view
     override fun onBindViewHolder(
         holder: PhotoViewHolder, position: Int
     ) {

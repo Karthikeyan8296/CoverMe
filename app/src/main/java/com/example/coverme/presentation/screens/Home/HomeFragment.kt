@@ -32,7 +32,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val adaptor = PhotoPagingAdaptor(
         onItemClick = {
             openPhotoDetails(it)
-        })
+        }
+    )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -52,8 +53,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val fab = view.findViewById<FloatingActionButton>(R.id.fab)
 
         fab.setOnClickListener {
-            parentFragmentManager.beginTransaction().replace(R.id.main, FavFragment())
-                .addToBackStack(null).commit()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.main, FavFragment())
+                .addToBackStack(null)
+                .commit()
         }
     }
 }

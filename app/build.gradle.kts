@@ -1,8 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -12,7 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.example.coverme"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -43,54 +43,40 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
-    implementation(libs.paging.runtime.ktx)
-    implementation(libs.recyclerview)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.fragment.ktx)
+
+    // Lifecycle
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+
+    // Retrofit + Moshi
+    implementation(libs.retrofit)
+    implementation(libs.converter.moshi)
+    implementation(libs.moshi)
+    implementation(libs.squareup.moshi.kotlin)
+    ksp(libs.moshi.kotlin.codegen)
+
+    // Paging
+    implementation(libs.androidx.paging.runtime.ktx)
+
+    // Glide
+    implementation(libs.glide)
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
-    // LiveData
-    implementation(libs.androidx.lifecycle.livedata.ktx)
-
-    // ViewModel (often used with LiveData)
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
-
-    //fragment ktx
-    implementation(libs.androidx.fragment.ktx)
-
-    //data store
-    implementation(libs.androidx.datastore.preferences)
-
-    // Room runtime
-    implementation (libs.androidx.room.runtime)
-
-    // Kotlin extensions (Coroutines support)
-    implementation (libs.androidx.room.ktx)
-
-    // Ksp for room
-    ksp(libs.androidx.room.compiler)
-
-    //ksp for hilt
-    ksp(libs.hilt.android.compiler)
-
-    implementation(libs.hilt.android)
-
-    implementation(libs.retrofit)
-
-    // Core Moshi library
-    implementation(libs.moshi)
-
-    // Kotlin utilities (includes KotlinJsonAdapterFactory if needed for runtime reflection)
-    implementation(libs.squareup.moshi.kotlin)
-
-    implementation (libs.converter.moshi)
-
-    // Compile-time code generation (recommended)
-    ksp(libs.moshi.kotlin.codegen)
-
-    //glide
-    implementation (libs.glide)
-
-    //paging
-    implementation(libs.androidx.paging.runtime.ktx)
 }

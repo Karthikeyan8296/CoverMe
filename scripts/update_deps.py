@@ -1,14 +1,15 @@
 import sys
 import re
 import subprocess
+import tomlkit
 
 def get_dependency_updates(update_type, dependency_name=""):
     result = subprocess.run(
         ["./gradlew", "dependencyDoctor"],
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,  # ✅ merge stderr into stdout
+        stderr=subprocess.STDOUT,
         text=True,
-        encoding="utf-8"           # ✅ fix unicode → arrow character
+        encoding="utf-8"
     )
     output = result.stdout
     print("=== dependencyDoctor output ===")
@@ -63,38 +64,25 @@ def get_dependency_updates(update_type, dependency_name=""):
 
 
 def update_toml(updates):
-    toml_path = "gradle/libs.versions.toml"
+    with open("gradle/libs.versions.toml", "r") as f:
+        doc = tomlkit.load(f)
 
-    with open(toml_path, "r") as f:
-        content = f.read()
-
+    versions = doc["versions"]
     changed = []
 
-    for dep_name, versions in updates.items():
-        current = versions["current"]
-        latest = versions["latest"]
+    for dep_name, data in updates.items():
+        # try all name variants
+        for key in versions:
+            if key.lower().replace("-","") == dep_name.lower().replace("-",""):
+                versions[key] = data["latest"]
+                changed.append(f"{key}: {data['current']} → {data['latest']}")
+                break
 
-        # ✅ ^ anchors to start of line, \b is word boundary
-        # so "moshi" only matches "moshi = ..." NOT "converterMoshi = ..."
-        pattern = rf'(^{re.escape(dep_name)}\s*=\s*")[^"]+(")'
-        new_content = re.sub(
-            pattern,
-            rf'\g<1>{latest}\g<2>',
-            content,
-            flags=re.IGNORECASE | re.MULTILINE  # ✅ MULTILINE makes ^ match each line start
-        )
-
-        if new_content != content:
-            content = new_content
-            changed.append(f"{dep_name}: {current} → {latest}")
-            print(f"✅ Updated {dep_name}: {current} → {latest}")
-        else:
-            print(f"⚠️  Could not find version key for '{dep_name}' in toml")
-
-    with open(toml_path, "w") as f:
-        f.write(content)
+    with open("gradle/libs.versions.toml", "w") as f:
+        tomlkit.dump(doc, f)
 
     return changed
+
 
 if __name__ == "__main__":
     update_type = sys.argv[1]

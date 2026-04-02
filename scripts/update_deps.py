@@ -74,8 +74,15 @@ def update_toml(updates):
         current = versions["current"]
         latest = versions["latest"]
 
-        pattern = rf'({re.escape(dep_name)}\s*=\s*")[^"]+(")'
-        new_content = re.sub(pattern, rf'\g<1>{latest}\g<2>', content, flags=re.IGNORECASE)
+        # ✅ ^ anchors to start of line, \b is word boundary
+        # so "moshi" only matches "moshi = ..." NOT "converterMoshi = ..."
+        pattern = rf'(^{re.escape(dep_name)}\s*=\s*")[^"]+(")'
+        new_content = re.sub(
+            pattern,
+            rf'\g<1>{latest}\g<2>',
+            content,
+            flags=re.IGNORECASE | re.MULTILINE  # ✅ MULTILINE makes ^ match each line start
+        )
 
         if new_content != content:
             content = new_content

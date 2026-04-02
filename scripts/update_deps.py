@@ -5,7 +5,10 @@ import subprocess
 def get_dependency_updates(update_type, dependency_name=""):
     result = subprocess.run(
         ["./gradlew", "dependencyDoctor"],
-        capture_output=True, text=True
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,  # ✅ merge stderr into stdout
+        text=True,
+        encoding="utf-8"           # ✅ fix unicode → arrow character
     )
     output = result.stdout
     print("=== dependencyDoctor output ===")
@@ -14,13 +17,12 @@ def get_dependency_updates(update_type, dependency_name=""):
 
     updates = {}
     current_section = None
-    last_dep_name = None      # ✅ track dep name from previous line
+    last_dep_name = None
     last_dep_group = None
 
     for line in output.splitlines():
         line = line.strip()
 
-        # detect section headers
         if "Major Updates" in line:
             current_section = "major"
             continue
@@ -34,20 +36,18 @@ def get_dependency_updates(update_type, dependency_name=""):
             current_section = None
             continue
 
-        # ✅ line 1: catch the dep name line e.g. "[app] com.squareup.moshi:moshi"
         dep_name_match = re.search(r'\[[\w]+\]\s+([\w.\-]+):([\w.\-]+)', line)
         if dep_name_match:
             last_dep_group = dep_name_match.group(1)
             last_dep_name = dep_name_match.group(2)
             continue
 
-        # ✅ line 2: catch the version line e.g. "1.15.0 → 1.15.2"
-        version_match = re.search(r'([\d.]+)\s+→\s+([\d.]+)', line)
+        # ✅ handle both → (unicode) and -> (ascii) just in case
+        version_match = re.search(r'([\d.]+(?:-[\w.]+)?)\s+(?:→|->)\s+([\d.]+(?:-[\w.]+)?)', line)
         if version_match and last_dep_name and current_section == update_type:
             current_ver = version_match.group(1)
             latest_ver = version_match.group(2)
 
-            # filter by specific dep name if requested
             if dependency_name and dependency_name.lower() not in last_dep_name.lower():
                 last_dep_name = None
                 continue
@@ -57,7 +57,7 @@ def get_dependency_updates(update_type, dependency_name=""):
                 "latest": latest_ver,
                 "group": last_dep_group
             }
-            last_dep_name = None  # reset after consuming
+            last_dep_name = None
 
     return updates
 

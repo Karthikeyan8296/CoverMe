@@ -44,6 +44,13 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SOURCE_BRANCH: ${{ github.ref_name }}
 
+      # The artifact name can't contain /, but rel/1.0.0 has one. Fix is simple
+      - name: Sanitize artifact name
+        id: artifact
+        run: |
+          SAFE_NAME=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          echo "name=dependency-updates-${SAFE_NAME}" >> $GITHUB_OUTPUT
+
       # upload the JSON the plugin wrote — keyed by branch name so the
       # update workflow can find exactly the right scan for this branch
       - name: Upload dependency updates JSON

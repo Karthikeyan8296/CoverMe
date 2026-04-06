@@ -28,8 +28,6 @@ class MainActivity : AppCompatActivity() {
 
         val onBoardingDataStore = OnBoardingDataStore(this)
 
-        Log.d("HOHOHO", "hhee")
-
         if (savedInstanceState == null) {
             lifecycleScope.launch {
                 val hasOnboarded = onBoardingDataStore.hasOnboarded()

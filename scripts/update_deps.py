@@ -43,7 +43,7 @@ def get_dependency_updates(update_type, dependency_name=""):
             last_dep_name = dep_name_match.group(2)
             continue
 
-        # ✅ handle both → (unicode) and -> (ascii) just in case
+        # handle both → (unicode) and -> (ascii) just in case
         version_match = re.search(r'([\d.]+(?:-[\w.]+)?)\s+(?:→|->)\s+([\d.]+(?:-[\w.]+)?)', line)
         if version_match and last_dep_name and current_section == update_type:
             current_ver = version_match.group(1)
@@ -82,7 +82,6 @@ def update_toml(updates):
         tomlkit.dump(doc, f)
 
     return changed
-
 
 if __name__ == "__main__":
     update_type = sys.argv[1]

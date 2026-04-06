@@ -56,6 +56,7 @@ jobs:
       - name: Upload dependency updates JSON
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-updates-${{ github.ref_name }}
+          name: ${{ steps.artifact.outputs.name }}
           path: build/dependency-doctor/updates.json
-          retention-days: 7          # keep it around long enough for manual updates
+          retention-days: 7
+

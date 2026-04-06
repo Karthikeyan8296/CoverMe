@@ -4,6 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     id("com.google.devtools.ksp") version "2.0.21-1.0.25" apply false
     id("com.google.dagger.hilt.android") version "2.57.1" apply false
-    id ("org.example.dependencyDoctor") version "2.0.0" //take the latest version
+    id ("org.example.dependencyDoctor") version "3.0.0" //take the latest version
     id("com.github.ben-manes.versions") version "0.51.0"
 }

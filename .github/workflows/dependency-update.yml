@@ -49,12 +49,33 @@ jobs:
           SAFE_NAME=$(echo "${{ github.ref_name }}" | tr '/' '-')
           echo "name=dependency-updates-${SAFE_NAME}" >> $GITHUB_OUTPUT
 
+      # find the run-id of the most recent successful dependency-scan
+      # run on this branch — download-artifact needs this to locate the artifact
+      - name: Find scan workflow run ID
+        id: find_run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUN_ID=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/dependency-scan.yml/runs?branch=${{ github.ref_name }}&status=success&per_page=1" \
+            --jq '.workflow_runs[0].id')
+
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+            echo "No successful dependency-scan run found for branch ${{ github.ref_name }}"
+            echo "Please push to rel/* branch first to trigger the scan."
+            exit 1
+          fi
+
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+          echo "Found scan run ID: $RUN_ID"
+
       - name: Download dependency updates JSON
         uses: actions/download-artifact@v4
         with:
           name: ${{ steps.artifact.outputs.name }}
           path: dependency-updates
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ steps.find_run.outputs.run_id }}
 
       - name: Check for existing PR
         id: check_pr

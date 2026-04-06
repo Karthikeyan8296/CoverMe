@@ -17,6 +17,10 @@ on:
         description: 'Slack thread timestamp'
         required: false
 
+concurrency:
+  group: dependency-update-${{ github.ref }}
+  cancel-in-progress: false   # don't cancel in-progress updates — let them finish
+
 jobs:
   update-dependencies:
     runs-on: ubuntu-latest
@@ -28,12 +32,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -42,7 +40,14 @@ jobs:
       - name: Install Python dependencies
         run: pip install tomlkit
 
-      # ADD THIS — prevents duplicate PRs
+      # download the JSON that the scan workflow already produced
+      # artifact name must match what dependency-scan.yml uploaded
+      - name: Download dependency updates JSON
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-updates-${{ github.ref_name }}
+          path: dependency-updates    # script reads from dependency-updates/updates.json
+
       - name: Check for existing PR
         id: check_pr
         env:
@@ -59,7 +64,6 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      # ADD THIS — notify and stop if already exists
       - name: Skip if PR already exists
         if: steps.check_pr.outputs.exists == 'true'
         run: |
@@ -72,7 +76,7 @@ jobs:
           exit 0
 
       - name: Create update branch
-        if: steps.check_pr.outputs.exists != 'true'  # skip if PR exists
+        if: steps.check_pr.outputs.exists != 'true'
         id: branch
         run: |
           BRANCH="deps/${{ inputs.update_type }}-update-$(date +%Y-%m-%d-%H%M)"
@@ -80,12 +84,12 @@ jobs:
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
       - name: Run dependency update script
-        if: steps.check_pr.outputs.exists != 'true'  # skip if PR exists
-        run: python scripts/update_deps.py "${{ inputs.update_type }}" "${{ inputs.dependency_name }}"
-        env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+        if: steps.check_pr.outputs.exists != 'true'
+        run: |
+          python scripts/update_deps.py \
+            "${{ inputs.update_type }}" \
+            "${{ inputs.dependency_name }}" \
+            "dependency-updates/updates.json"
 
       - name: Check if anything changed
         if: steps.check_pr.outputs.exists != 'true'
@@ -101,7 +105,7 @@ jobs:
         if: steps.check_pr.outputs.exists != 'true' && steps.changes.outputs.changed == 'true'
         run: |
           git config user.name "renovate-bot"
-          git config user.email "renovate-bot@poshmark.com"
+          git config user.email "renovate-bot@yourorg.com"
           git add gradle/libs.versions.toml
           git commit -m "chore: update ${{ inputs.update_type }} dependencies"
           git push origin ${{ steps.branch.outputs.branch }}
@@ -126,7 +130,7 @@ jobs:
             Triggered by: @${{ github.actor }}")
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
 
-      - name: Notify Slack
+      - name: Notify Slack — PR raised
         if: steps.check_pr.outputs.exists != 'true' && steps.changes.outputs.changed == 'true'
         run: |
           curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \

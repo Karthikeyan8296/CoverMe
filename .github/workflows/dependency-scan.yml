@@ -3,10 +3,11 @@ name: Dependency Scan
 on:
   push:
     branches:
-      - 'rel/**'    # triggers on any rel/* branch push
-  create:
-    branches:
-      - 'rel/**'    # triggers when rel/* branch is created
+      - 'rel/**'
+
+concurrency:             # prevents duplicate runs if you push twice quickly
+  group: dependency-scan-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   dependency-scan:
@@ -22,6 +23,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Cache Gradle             # build cache, saves some time
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml') }}
+          restore-keys: gradle-
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
@@ -33,3 +43,12 @@ jobs:
           GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SOURCE_BRANCH: ${{ github.ref_name }}
+
+      # upload the JSON the plugin wrote — keyed by branch name so the
+      # update workflow can find exactly the right scan for this branch
+      - name: Upload dependency updates JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-updates-${{ github.ref_name }}
+          path: build/dependency-doctor/updates.json
+          retention-days: 7          # keep it around long enough for manual updates

@@ -42,11 +42,17 @@ jobs:
 
       # download the JSON that the scan workflow already produced
       # artifact name must match what dependency-scan.yml uploaded
+      - name: Sanitize artifact name
+        id: artifact
+        run: |
+          SAFE_NAME=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          echo "name=dependency-updates-${SAFE_NAME}" >> $GITHUB_OUTPUT
+
       - name: Download dependency updates JSON
         uses: actions/download-artifact@v4
         with:
-          name: dependency-updates-${{ github.ref_name }}
-          path: dependency-updates    # script reads from dependency-updates/updates.json
+          name: ${{ steps.artifact.outputs.name }}
+          path: dependency-updates
 
       - name: Check for existing PR
         id: check_pr

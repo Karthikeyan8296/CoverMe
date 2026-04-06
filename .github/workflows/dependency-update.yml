@@ -42,7 +42,37 @@ jobs:
       - name: Install Python dependencies
         run: pip install tomlkit
 
+      # ADD THIS — prevents duplicate PRs
+      - name: Check for existing PR
+        id: check_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh pr list \
+            --base ${{ github.ref_name }} \
+            --search "chore: update ${{ inputs.update_type }} dependencies" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$EXISTING" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ADD THIS — notify and stop if already exists
+      - name: Skip if PR already exists
+        if: steps.check_pr.outputs.exists == 'true'
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"text\": \"ℹ️ PR already exists for *${{ inputs.update_type }}* updates on \`${{ github.ref_name }}\` → PR #${{ steps.check_pr.outputs.pr_number }}\",
+              \"thread_ts\": \"${{ inputs.slack_thread_ts }}\"
+            }"
+          exit 0
+
       - name: Create update branch
+        if: steps.check_pr.outputs.exists != 'true'  # skip if PR exists
         id: branch
         run: |
           BRANCH="deps/${{ inputs.update_type }}-update-$(date +%Y-%m-%d-%H%M)"
@@ -50,6 +80,7 @@ jobs:
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
       - name: Run dependency update script
+        if: steps.check_pr.outputs.exists != 'true'  # skip if PR exists
         run: python scripts/update_deps.py "${{ inputs.update_type }}" "${{ inputs.dependency_name }}"
         env:
           GITHUB_ACTOR: ${{ github.actor }}
@@ -57,6 +88,7 @@ jobs:
           GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Check if anything changed
+        if: steps.check_pr.outputs.exists != 'true'
         id: changes
         run: |
           if git diff --quiet; then
@@ -66,7 +98,7 @@ jobs:
           fi
 
       - name: Commit and push
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.check_pr.outputs.exists != 'true' && steps.changes.outputs.changed == 'true'
         run: |
           git config user.name "renovate-bot"
           git config user.email "renovate-bot@poshmark.com"
@@ -75,7 +107,7 @@ jobs:
           git push origin ${{ steps.branch.outputs.branch }}
 
       - name: Create Pull Request
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.check_pr.outputs.exists != 'true' && steps.changes.outputs.changed == 'true'
         id: pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,21 +127,21 @@ jobs:
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
 
       - name: Notify Slack
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.check_pr.outputs.exists != 'true' && steps.changes.outputs.changed == 'true'
         run: |
           curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
             -H 'Content-Type: application/json' \
             -d "{
-              \"text\": \"✅ PR raised for *${{ inputs.update_type }}* updates!\n${{ steps.pr.outputs.pr_url }}\",
+              \"text\": \"✅ PR raised for *${{ inputs.update_type }}* updates on \`${{ github.ref_name }}\`!\n${{ steps.pr.outputs.pr_url }}\",
               \"thread_ts\": \"${{ inputs.slack_thread_ts }}\"
             }"
 
       - name: Notify Slack — no changes
-        if: steps.changes.outputs.changed == 'false'
+        if: steps.check_pr.outputs.exists != 'true' && steps.changes.outputs.changed == 'false'
         run: |
           curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
             -H 'Content-Type: application/json' \
             -d "{
-              \"text\": \"ℹ️ No ${{ inputs.update_type }} updates found to apply.\",
+              \"text\": \"ℹ️ No ${{ inputs.update_type }} updates found on \`${{ github.ref_name }}\`.\",
               \"thread_ts\": \"${{ inputs.slack_thread_ts }}\"
             }"

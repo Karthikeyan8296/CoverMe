@@ -2,8 +2,8 @@ name: Weekly Dependency Scan
 
 on:
   push:
-    branches:
-      - 'master'
+    branches: ['master']
+  workflow_dispatch:
 
 jobs:
   scan-and-notify:
@@ -11,145 +11,125 @@ jobs:
 
     steps:
 
-      # ── 1. Checkout your rel branch ─────────────────────────────────────────
-      - name: Checkout rel branch
+      # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # ── 2. Run Renovate in dry-run mode ─────────────────────────────────────
-      #    FIX: --repositories is NOT a valid CLI flag.
-      #    Pass it as RENOVATE_REPOSITORIES env var (JSON array string).
+      # ── 2. Run Renovate dry-run ────────────────────────────────────────────
+      # ALL Renovate options go in env vars — no CLI flags except the command itself.
+      # LOG_LEVEL and LOG_FORMAT are NOT prefixed with RENOVATE_
       - name: Run Renovate dry-run scan
-        run: |
-          npx --yes renovate \
-            --dry-run=full \
-            --log-level=debug \
-            --log-format=json \
-            2>&1 | tee /tmp/renovate.log || true
+        run: npx --yes renovate 2>&1 | tee /tmp/renovate.log || true
         env:
-          RENOVATE_TOKEN:        ${{ secrets.RENOVATE_TOKEN }}
+          RENOVATE_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
           RENOVATE_PLATFORM:     github
           RENOVATE_REPOSITORIES: '["${{ github.repository }}"]'
           RENOVATE_AUTODISCOVER: 'false'
+          RENOVATE_DRY_RUN:      full
+          LOG_LEVEL:             debug
+          LOG_FORMAT:            json
 
-      # ── DEBUG: show what Renovate actually logged (remove after confirming) ──
-      - name: Debug — show renovate log tail
+      # ── 3. Debug — confirm log has data ───────────────────────────────────
+      # Check this output after the first run to confirm Renovate scanned properly
+      - name: Debug log
         run: |
-          echo "=== Last 30 lines of renovate log ==="
-          tail -30 /tmp/renovate.log
-          echo "=== Lines containing updateType ==="
-          grep -c '"updateType"' /tmp/renovate.log || echo "0 updateType lines found"
+          echo "Total log lines: $(wc -l < /tmp/renovate.log)"
+          echo "Lines with updateType: $(grep -c '\"updateType\"' /tmp/renovate.log || echo 0)"
+          echo "--- Last 20 lines ---"
+          tail -20 /tmp/renovate.log
 
-      # ── 3. Parse the log and build the Slack message ─────────────────────────
-      #    Pure Node.js — no npm install needed, just built-in fs module.
-      #    Reads each line of the ndjson log, finds dependency update entries,
-      #    groups them into major / minor / patch, formats the Slack message.
-      - name: Parse log and format Slack message
-        id: build_message
+      # ── 4. Parse log + build Slack message ───────────────────────────────
+      - name: Parse and format Slack message
         run: |
           node << 'EOF'
           const fs = require('fs');
 
           const raw = fs.readFileSync('/tmp/renovate.log', 'utf8');
           const lines = raw.split('\n').filter(Boolean);
-
           const updates = { major: [], minor: [], patch: [] };
 
-          for (const line of lines) {
-            let entry;
-            try { entry = JSON.parse(line); } catch { continue; }
-
-            // Renovate logs a "packageFiles with updates" entry — this has all deps
-            if (entry.msg !== 'packageFiles with updates') continue;
-
-            const packageFiles = entry.config?.packageFiles || {};
-
-            for (const [manager, files] of Object.entries(packageFiles)) {
-              for (const file of (Array.isArray(files) ? files : [])) {
-                const moduleName = file.packageFile || manager;
-                for (const dep of (file.deps || [])) {
-                  for (const update of (dep.updates || [])) {
-                    const type = update.updateType; // "major" | "minor" | "patch"
-                    if (!updates[type]) continue;
-
-                    updates[type].push({
-                      module: moduleName,
-                      name:   dep.depName || dep.packageName,
-                      from:   dep.currentVersion || dep.currentValue,
-                      to:     update.newVersion
-                    });
-                  }
-                }
-              }
+          // Recursively walk any JSON object to find dep+update pairs
+          // Works regardless of how Renovate nests the data in that version
+          function walk(obj, file) {
+            if (!obj || typeof obj !== 'object') return;
+            if (Array.isArray(obj)) {
+              obj.forEach(item => walk(item, file));
+              return;
             }
+            // Track packageFile context as we go deeper
+            const ctx = obj.packageFile || file;
+            // Found a dep entry with updates list
+            if (obj.depName && Array.isArray(obj.updates)) {
+              for (const u of obj.updates) {
+                const type = u.updateType;
+                if (!updates[type]) continue;
+                updates[type].push({
+                  module: ctx || 'app',
+                  name:   obj.depName,
+                  from:   obj.currentVersion || obj.currentValue || '?',
+                  to:     u.newVersion || u.newValue || '?'
+                });
+              }
+              return;
+            }
+            Object.values(obj).forEach(v => walk(v, ctx));
           }
 
-          // ── Format the Slack Block Kit JSON ──────────────────────────────────
-          const fmt = (list) =>
-            list.length === 0
-              ? [{ type: 'section', text: { type: 'mrkdwn', text: '_None_' } }]
-              : list.map(u => ({
-                  type: 'section',
-                  text: {
-                    type: 'mrkdwn',
-                    text: `\`[${u.module}]\` *${u.name}*   \`${u.from}\` → \`${u.to}\``
-                  }
-                }));
+          // Only parse lines that even mention "updateType" — skip the rest
+          for (const line of lines) {
+            if (!line.includes('"updateType"')) continue;
+            try { walk(JSON.parse(line), null); } catch {}
+          }
+
+          // Deduplicate (Renovate logs same dep at multiple nesting levels)
+          for (const type of ['major', 'minor', 'patch']) {
+            const seen = new Set();
+            updates[type] = updates[type].filter(u => {
+              const key = u.name + u.from + u.to;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+          }
 
           const total = updates.major.length + updates.minor.length + updates.patch.length;
+          console.log(`Found: major=${updates.major.length} minor=${updates.minor.length} patch=${updates.patch.length}`);
+
           const today = new Date().toLocaleDateString('en-US', {
             weekday: 'long', month: 'short', day: 'numeric', year: 'numeric'
           });
 
+          const fmtList = list =>
+            list.length === 0
+              ? [{ type: 'section', text: { type: 'mrkdwn', text: '_None_' } }]
+              : list.map(u => ({
+                  type: 'section',
+                  text: { type: 'mrkdwn', text: `\`[${u.module}]\` *${u.name}*   \`${u.from}\` → \`${u.to}\`` }
+                }));
+
           const payload = {
             blocks: [
-              {
-                type: 'header',
-                text: { type: 'plain_text', text: '📦  Dependency Update Report' }
-              },
-              {
-                type: 'context',
-                elements: [{
-                  type: 'mrkdwn',
-                  text: `${today}  |  Branch: \`rel\`  |  *${total} updates available*`
-                }]
-              },
+              { type: 'header', text: { type: 'plain_text', text: '📦  Dependency Update Report' } },
+              { type: 'context', elements: [{ type: 'mrkdwn', text: `${today}  |  Branch: \`${{ github.ref_name }}\`  |  *${total} updates available*` }] },
               { type: 'divider' },
-              {
-                type: 'section',
-                text: { type: 'mrkdwn', text: `*🔴  Major Updates  (${updates.major.length})*` }
-              },
-              ...fmt(updates.major),
+              { type: 'section', text: { type: 'mrkdwn', text: `*🔴  Major Updates  (${updates.major.length})*` } },
+              ...fmtList(updates.major),
               { type: 'divider' },
-              {
-                type: 'section',
-                text: { type: 'mrkdwn', text: `*🟡  Minor Updates  (${updates.minor.length})*` }
-              },
-              ...fmt(updates.minor),
+              { type: 'section', text: { type: 'mrkdwn', text: `*🟡  Minor Updates  (${updates.minor.length})*` } },
+              ...fmtList(updates.minor),
               { type: 'divider' },
-              {
-                type: 'section',
-                text: { type: 'mrkdwn', text: `*🟢  Patch Updates  (${updates.patch.length})*` }
-              },
-              ...fmt(updates.patch),
+              { type: 'section', text: { type: 'mrkdwn', text: `*🟢  Patch Updates  (${updates.patch.length})*` } },
+              ...fmtList(updates.patch),
               { type: 'divider' },
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `*Summary*\nMajor: ${updates.major.length}   Minor: ${updates.minor.length}   Patch: ${updates.patch.length}   Total: ${total}`
-                }
-              }
+              { type: 'section', text: { type: 'mrkdwn', text: `*Summary*\nMajor: ${updates.major.length}   Minor: ${updates.minor.length}   Patch: ${updates.patch.length}   Total: ${total}` } }
             ]
           };
 
           fs.writeFileSync('/tmp/slack-payload.json', JSON.stringify(payload));
-          console.log('Slack payload written. Total updates:', total);
           EOF
 
-      # ── 4. Send to Slack via Incoming Webhook ────────────────────────────────
-      #    Just one curl call. The webhook URL is a GitHub secret.
-      #    No bot, no server, no SDK — just plain HTTPS.
-      - name: Send report to Slack
+      # ── 5. Send to Slack via Incoming Webhook ─────────────────────────────
+      - name: Send to Slack
         run: |
           curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \

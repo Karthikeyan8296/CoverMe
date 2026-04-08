@@ -16,8 +16,6 @@ jobs:
       # ── 1. Checkout your rel branch ─────────────────────────────────────────
       - name: Checkout rel branch
         uses: actions/checkout@v4
-        with:
-          ref: rel
 
       # ── 2. Run Renovate in dry-run mode ─────────────────────────────────────
       #    This scans build.gradle / libs.versions.toml but raises NO PRs yet.

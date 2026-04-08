@@ -1,0 +1,163 @@
+name: On-Demand Dependency Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'patch / minor / major'
+        required: true
+      target_branch:
+        description: 'Branch to raise PR against (e.g. rel/1.0.0)'
+        required: true
+      dependency_name:
+        description: 'Specific dependency to update (optional, e.g. hilt)'
+        required: false
+        default: ''
+      slack_channel:
+        description: 'Slack channel ID to reply to'
+        required: false
+        default: ''
+      slack_thread_ts:
+        description: 'Slack thread timestamp to reply in'
+        required: false
+        default: ''
+
+jobs:
+  raise-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ── 1. Checkout the TARGET branch (rel/1.0.0) ─────────────────────────
+      # Renovate needs the actual project files to know what versions are current
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_branch }}
+
+      # ── 2. Build dynamic Renovate config ──────────────────────────────────
+      # Two modes:
+      #   a) update_type only  → enable patch/minor/major for ALL dependencies
+      #   b) dependency_name   → only update that specific package
+      - name: Generate Renovate config
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+
+          const updateType  = process.env.UPDATE_TYPE;
+          const depName     = process.env.DEP_NAME;
+          const branch      = process.env.TARGET_BRANCH;
+
+          let packageRules;
+
+          if (depName) {
+            // Specific dep mode — e.g. "hilt" matches hilt-android, hilt-android-compiler
+            packageRules = [
+              {
+                matchPackagePatterns: [`.*${depName}.*`],
+                enabled: true
+              },
+              {
+                matchPackagePatterns: ['.*'],
+                excludePackagePatterns: [`.*${depName}.*`],
+                enabled: false
+              }
+            ];
+          } else {
+            // Update type mode — enable only patch / minor / major
+            const all      = ['patch', 'minor', 'major'];
+            const disabled = all.filter(t => t !== updateType);
+            packageRules = [
+              {
+                matchUpdateTypes: [updateType],
+                enabled: true,
+                groupName: `${updateType} dependency updates`,
+                groupSlug: `${updateType}-updates`
+              },
+              {
+                matchUpdateTypes: disabled,
+                enabled: false
+              }
+            ];
+          }
+
+          const config = {
+            baseBranches:  [branch],
+            packageRules,
+            // One grouped PR — not one PR per package
+            automerge: false,
+            labels: ['dependencies', updateType]
+          };
+
+          fs.writeFileSync('/tmp/renovate-config.json', JSON.stringify(config, null, 2));
+          console.log('Config:', JSON.stringify(config, null, 2));
+          EOF
+        env:
+          UPDATE_TYPE:    ${{ github.event.inputs.update_type }}
+          DEP_NAME:       ${{ github.event.inputs.dependency_name }}
+          TARGET_BRANCH:  ${{ github.event.inputs.target_branch }}
+
+      # ── 3. Run Renovate — this time NO dry-run → actually raises PRs ──────
+      - name: Run Renovate
+        run: npx --yes renovate 2>&1 | tee /tmp/renovate-update.log || true
+        env:
+          RENOVATE_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
+          RENOVATE_PLATFORM:     github
+          RENOVATE_REPOSITORIES: '["${{ github.repository }}"]'
+          RENOVATE_AUTODISCOVER: 'false'
+          RENOVATE_CONFIG_FILE:  /tmp/renovate-config.json
+          LOG_LEVEL:             info
+          LOG_FORMAT:            json
+          # NO RENOVATE_DRY_RUN here — we want real PRs this time
+
+      # ── 4. Find the PR Renovate just raised ────────────────────────────────
+      # Wait a few seconds for GitHub to index the new PR, then fetch it
+      - name: Find raised PR
+        id: find_pr
+        run: |
+          sleep 5   # give GitHub a moment to register the new PR
+
+          PR_DATA=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls?base=${{ github.event.inputs.target_branch }}&state=open&per_page=5")
+
+          # Pick the most recently created PR targeting our branch
+          PR_URL=$(echo "$PR_DATA" | node -e "
+            const data = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const pr = data
+              .filter(p => p.user.login.includes('renovate') || p.title.toLowerCase().includes('update'))
+              .sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0];
+            console.log(pr ? pr.html_url : 'no-pr-found');
+          ")
+
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "Found PR: $PR_URL"
+
+      # ── 5. Post PR link back to Slack thread ──────────────────────────────
+      - name: Notify Slack
+        if: ${{ github.event.inputs.slack_channel != '' }}
+        run: |
+          PR_URL="${{ steps.find_pr.outputs.pr_url }}"
+          TYPE="${{ github.event.inputs.update_type }}"
+          DEP="${{ github.event.inputs.dependency_name }}"
+          BRANCH="${{ github.event.inputs.target_branch }}"
+
+          if [ "$PR_URL" = "no-pr-found" ]; then
+            MSG="⚠️ Renovate ran but no new PR was found. Either everything is already up to date or check the workflow logs."
+          else
+            if [ -n "$DEP" ]; then
+              MSG="✅ PR raised for *${DEP}* on \`${BRANCH}\`:\n${PR_URL}"
+            else
+              MSG="✅ PR raised for all *${TYPE}* updates on \`${BRANCH}\`:\n${PR_URL}"
+            fi
+          fi
+
+          curl -s -X POST "https://slack.com/api/chat.postMessage" \
+            -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"channel\": \"${{ github.event.inputs.slack_channel }}\",
+              \"thread_ts\": \"${{ github.event.inputs.slack_thread_ts }}\",
+              \"text\": \"${MSG}\"
+            }"

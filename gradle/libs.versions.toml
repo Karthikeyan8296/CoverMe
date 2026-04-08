@@ -1,7 +1,7 @@
 [versions]
 agp = "8.13.2"
 converterMoshi = "3.0.0"
-datastorePreferences = "1.2.0"
+datastorePreferences = "1.2.1"
 fragmentKtx = "1.8.9"
 glide = "4.16.0"
 hiltAndroidCompiler = "2.57.1"

@@ -13,7 +13,7 @@ jobs:
 
       # ── 1. Checkout ────────────────────────────────────────────────────────
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # ── 2. Run Renovate dry-run ────────────────────────────────────────────
       # ALL Renovate options go in env vars — no CLI flags except the command itself.

@@ -31,7 +31,7 @@ jobs:
       # ── 1. Checkout the TARGET branch (rel/1.0.0) ─────────────────────────
       # Renovate needs the actual project files to know what versions are current
       - name: Checkout target branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.inputs.target_branch }}
 

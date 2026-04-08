@@ -54,7 +54,7 @@ jobs:
       # upload the JSON the plugin wrote — keyed by branch name so the
       # update workflow can find exactly the right scan for this branch
       - name: Upload dependency updates JSON
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.artifact.outputs.name }}
           path: build/dependency-doctor/updates.json

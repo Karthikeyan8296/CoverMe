@@ -1,5 +1,3 @@
-# .github/workflows/weekly-dependency-scan.yml
-
 name: Weekly Dependency Scan
 
 on:
@@ -16,20 +14,32 @@ jobs:
       # ── 1. Checkout your rel branch ─────────────────────────────────────────
       - name: Checkout rel branch
         uses: actions/checkout@v4
+        with:
+          ref: rel
 
       # ── 2. Run Renovate in dry-run mode ─────────────────────────────────────
-      #    This scans build.gradle / libs.versions.toml but raises NO PRs yet.
-      #    Output goes to /tmp/renovate.log as ndjson (one JSON obj per line).
+      #    FIX: --repositories is NOT a valid CLI flag.
+      #    Pass it as RENOVATE_REPOSITORIES env var (JSON array string).
       - name: Run Renovate dry-run scan
         run: |
           npx --yes renovate \
-            --platform=github \
-            --token=${{ secrets.RENOVATE_TOKEN }} \
-            --repositories=${{ github.repository }} \
             --dry-run=full \
             --log-level=debug \
             --log-format=json \
             2>&1 | tee /tmp/renovate.log || true
+        env:
+          RENOVATE_TOKEN:        ${{ secrets.RENOVATE_TOKEN }}
+          RENOVATE_PLATFORM:     github
+          RENOVATE_REPOSITORIES: '["${{ github.repository }}"]'
+          RENOVATE_AUTODISCOVER: 'false'
+
+      # ── DEBUG: show what Renovate actually logged (remove after confirming) ──
+      - name: Debug — show renovate log tail
+        run: |
+          echo "=== Last 30 lines of renovate log ==="
+          tail -30 /tmp/renovate.log
+          echo "=== Lines containing updateType ==="
+          grep -c '"updateType"' /tmp/renovate.log || echo "0 updateType lines found"
 
       # ── 3. Parse the log and build the Slack message ─────────────────────────
       #    Pure Node.js — no npm install needed, just built-in fs module.

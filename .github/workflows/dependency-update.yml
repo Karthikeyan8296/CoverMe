@@ -70,7 +70,7 @@ jobs:
           echo "Found scan run ID: $RUN_ID"
 
       - name: Download dependency updates JSON
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ steps.artifact.outputs.name }}
           path: dependency-updates
